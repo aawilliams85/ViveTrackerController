@@ -1,0 +1,7 @@
+# Objects
+ViveTrackerController	KEYWORD1
+
+# ViveTrackerController
+GetControllerInfo	KEYWORD2
+SetControllerMode	KEYWORD2
+SetControllerState	KEYWORD2
