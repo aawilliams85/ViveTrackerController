@@ -11,11 +11,32 @@
 
 void ViveTrackerController::Init() {
   Connected = false;
-  ControllerModeAck = false;
-  ControllerModeSent = false;
+  HIDParserActive = false;
 }
 
-void ViveTrackerController::Task(USBHost &host) {
+void ViveTrackerController::Task() {
+  if (hidparser != HIDParserActive) {
+    if (HIDParserActive) {
+	  Serial.println("Disconnected");
+      Connected = false;
+      HIDParserActive = false;
+	}
+	else {
+		Serial.println("Connected: ");
+		Serial.println(hidparser.idVendor());
+		Serial.println(hidparser.idProduct());
+
+		HIDParserActive = true;
+		GetControllerInfo();
+		delay(2000);
+		Serial.println("Send mode command");
+		SetControllerMode();
+		delay(5000);
+		Connected = true;
+		Serial.println("Fin");
+	}
+  }
+
  /* uint32_t devices;
   uint32_t pipes;
   uint32_t transfers;
@@ -30,14 +51,14 @@ void ViveTrackerController::Task(USBHost &host) {
   }*/
 }
 
-void ViveTrackerController::GetControllerInfo(USBHIDParser &hidparser) {
+void ViveTrackerController::GetControllerInfo() {
 }
 
-bool ViveTrackerController::SetControllerMode(USBHIDParser &hidparser) {
+bool ViveTrackerController::SetControllerMode() {
   return hidparser.sendControlPacket(RequestType, Request, Value, Index, LengthMode, PacketDataMode);
 }
 
-bool ViveTrackerController::SetControllerState(USBHIDParser &hidparser) {
+bool ViveTrackerController::SetControllerState() {
   UpdateState();
   return hidparser.sendControlPacket(RequestType, Request, Value, Index, LengthState, PacketDataState);
 }
@@ -58,7 +79,7 @@ void ViveTrackerController::UpdateState() {
   LastUpdateTime = millis();
 }
 
-void ViveTrackerController::TouchpadSwipe(USBHIDParser &hidparser, TouchpadSwipeDirection dir) {
+void ViveTrackerController::TouchpadSwipe(TouchpadSwipeDirection dir) {
   // TODO -- Add all standard directions, parameterize step size and delay, add option for randomness?
 
   switch (dir) {
@@ -70,13 +91,13 @@ void ViveTrackerController::TouchpadSwipe(USBHIDParser &hidparser, TouchpadSwipe
       ButtonStatePadTouch = true;
 	  AnalogStatePadX = 0;
 	  AnalogStatePadY = 32767;
-	  SetControllerState(hidparser);
+	  SetControllerState();
 
 	  // Step through path to final position
       for (int i = 0; i <= 9; i++) {
 		delay(25);
         AnalogStatePadY = AnalogStatePadY - 6553;
-		SetControllerState(hidparser);
+		SetControllerState();
 	  }
 	  break;
 	default:
@@ -85,35 +106,66 @@ void ViveTrackerController::TouchpadSwipe(USBHIDParser &hidparser, TouchpadSwipe
   }
 }
 
-void ViveTrackerController::TouchpadRelease(USBHIDParser &hidparser) {
+void ViveTrackerController::TouchpadRelease() {
   ButtonStatePadClick = false;
   ButtonStatePadTouch = false;
   AnalogStatePadX = 0;
   AnalogStatePadY = 0;
-  SetControllerState(hidparser);
+  SetControllerState();
 }
 
-void ViveTrackerController::TriggerPull(USBHIDParser &hidparser) {
-  // TODO -- Parameterize step size and delay, add option for randomness?
+void ViveTrackerController::TriggerPull(uint16_t totaltime, uint16_t steptime) {
+  uint16_t stepsize = 0;
+  uint16_t laststep = (totaltime/steptime);
+  if (laststep <= 1) {
+    laststep = 1;
+	stepsize = 65535;
+  }
+  else {
+    stepsize = 65535 / laststep;
+    laststep -= 1;
+  }
 
   //Set initial position
   ButtonStateTrigger = false;
   AnalogStateTrigger = 0;
-  SetControllerState(hidparser);
+  SetControllerState();
 
   // Step through path to final position
-  for (int i = 0; i <= 9; i++) {
-	delay(25);
-	AnalogStateTrigger = AnalogStateTrigger + 6553;
-    if (i >= 9) {
+  for (int i = 0; i <= laststep; i++) {
+	delay(steptime);
+	AnalogStateTrigger = AnalogStateTrigger + stepsize;
+    if (i >= laststep) {
 	  ButtonStateTrigger = true;
 	}
-	SetControllerState(hidparser);
-  }  
+	SetControllerState();
+  }
 }
 
-void ViveTrackerController::TriggerRelease(USBHIDParser &hidparser) {
-  ButtonStateTrigger = false;
-  AnalogStateTrigger = 0;
-  SetControllerState(hidparser);
+void ViveTrackerController::TriggerRelease(uint16_t totaltime, uint16_t steptime) {  
+  uint16_t stepsize = 0;
+  uint16_t laststep = (totaltime/steptime);
+  if (laststep <= 1) {
+    laststep = 1;
+	stepsize = 65535;
+  }
+  else {
+    stepsize = 65535 / laststep;
+    laststep -= 1;
+  }
+
+  //Set initial position
+  ButtonStateTrigger = true;
+  AnalogStateTrigger = 65535;
+  SetControllerState();
+
+  // Step through path to final position
+  for (int i = 0; i <= laststep; i++) {
+	delay(steptime);
+	AnalogStateTrigger = AnalogStateTrigger - stepsize;
+    if (i >= 1) {
+	  ButtonStateTrigger = false;
+	}
+	SetControllerState();
+  }
 }

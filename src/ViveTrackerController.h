@@ -13,25 +13,24 @@
 
 class ViveTrackerController {
 public:
+  ViveTrackerController(USBHIDParser &hidparser) : hidparser(hidparser) {}
+
   // Object State
   bool Connected = false;
-  bool ControllerModeAck = false;
-  bool ControllerModeSent = false;
-  unsigned long LastUpdateTime = 0;
-  void Task(USBHost &host);
+  void Task();
 
   // Raw Actions
-  void GetControllerInfo(USBHIDParser &hidparser);
-  bool SetControllerMode(USBHIDParser &hidparser);
-  bool SetControllerState(USBHIDParser &hidparser);
+  void GetControllerInfo();
+  bool SetControllerMode();
+  bool SetControllerState();
   void UpdateState();
 
   // Basic Coordinated Actions
   enum TouchpadSwipeDirection {N, S, E, W, NE, SE, SW, NW};
-  void TouchpadSwipe(USBHIDParser &hidparser, TouchpadSwipeDirection dir);
-  void TouchpadRelease(USBHIDParser &hidparser);
-  void TriggerPull(USBHIDParser &hidparser);
-  void TriggerRelease(USBHIDParser &hidparser);
+  void TouchpadSwipe(TouchpadSwipeDirection dir);
+  void TouchpadRelease();
+  void TriggerPull(uint16_t totaltime = 250, uint16_t steptime = 25);
+  void TriggerRelease(uint16_t totaltime = 250, uint16_t steptime = 25);
 
   // Memory   
   bool ButtonStateTrigger = false;
@@ -45,7 +44,10 @@ public:
   uint16_t AnalogStateTrigger = 0;
 
 private:
+  USBHIDParser &hidparser;
+  bool HIDParserActive = false;
   void Init();
+  unsigned long LastUpdateTime = 0;
 
   // 
   static const uint32_t RequestType = 0x21;
