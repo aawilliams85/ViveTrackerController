@@ -19,47 +19,46 @@ void ViveTrackerController::Init() {
 void ViveTrackerController::Task() {
   if (hidparser != HIDParserActive) {
     if (HIDParserActive) {
-	  Serial.println("USB Disconnected");
+      Serial.println("USB Disconnected");
       ActualPID = 0x0000;
       ActualVID = 0x0000;
       Connected = false;
       HIDParserActive = false;
-	}
-	else {
-		// Get controller information and wait for device
-		// to be ready.  I don't know why this delay is
-		// required yet -- is there something in the HIDParser
-		// that can tell what's going on?  Or is this on the
-		// SteamVR side?  If the delay in this block is omitted
-		// the device doesn't respond to the mode change command.
-		Serial.println("USB Connected:");
-		HIDParserActive = true;
-		GetControllerInfo();
-		Serial.println(ActualVID, HEX);
-		Serial.println(ActualPID, HEX);
-        if ((ActualVID == ExpectedVID) and (ActualPID == ExpectedPID)) {
-		  Serial.println("Device matched expected VID and PID");
-		  delay(2000);
-	    }
-		else {
-		  Serial.println("Device didn't match expected VID and PID.  Halting");
-		  return;
-		}
+    }
+    else {
+      // Get controller information and wait for device
+      // to be ready.  I don't know why this delay is
+      // required yet -- is there something in the HIDParser
+      // that can tell what's going on?  Or is this on the
+      // SteamVR side?  If the delay in this block is omitted
+      // the device doesn't respond to the mode change command.
+      Serial.println("USB Connected:");
+      HIDParserActive = true;
+      GetControllerInfo();
+      Serial.println(ActualVID, HEX);
+      Serial.println(ActualPID, HEX);
+      if ((ActualVID == ExpectedVID) and (ActualPID == ExpectedPID)) {
+        Serial.println("Device matched expected VID and PID");
+        delay(2000);
+      }
+      else {
+        Serial.println("Device didn't match expected VID and PID.  Halting");
+        return;
+      }
 
-        // Change controller to accessory mode so that it can be
-		// commanded via additional control transfers.  I don't know
-		// why this delay is required yet -- whether that's how long
-		// the control transfer takes to execute, or what.  If the delay
-		// in this block is omitted the device will miss any subsequent
-		// commands until the mode change is complete.
-		Serial.println("Changing device to accessory mode");
-		SetControllerMode();
-		delay(5000);
-		Connected = true;
-		Serial.println("Device ready for use");
-	}
+      // Change controller to accessory mode so that it can be
+      // commanded via additional control transfers.  I don't know
+      // why this delay is required yet -- whether that's how long
+      // the control transfer takes to execute, or what.  If the delay
+      // in this block is omitted the device will miss any subsequent
+      // commands until the mode change is complete.
+      Serial.println("Changing device to accessory mode");
+      SetControllerMode();
+      delay(5000);
+      Connected = true;
+      Serial.println("Device ready for use");
+    }
   }
-
 }
 
 void ViveTrackerController::GetControllerInfo() {
@@ -118,84 +117,84 @@ void ViveTrackerController::TouchpadSwipe(TouchpadSwipeDirection Direction, uint
 
   switch (Direction) {
     case UP:
-	  // Set initial position
+      // Set initial position
       ButtonStatePadTouch = true;
-	  AnalogStatePadX = 0;
-	  AnalogStatePadY = -32767;
-	  SetControllerState();
-
-	  // Step through path to final position
-      for (int i = 0; i <= LoopUBound; i++) {
-    	delay(StepTime);
-    	AnalogStatePadY = AnalogStatePadY + StepSize;
-    	SetControllerState();
-      }
-	  
-	  // Ensure exact final position is reached
-      AnalogStatePadX = 0;
-      AnalogStatePadY = 32767;
-      SetControllerState();
-	  break;
-    case DOWN:
-	  // Set initial position
-      ButtonStatePadTouch = true;
-	  AnalogStatePadX = 0;
-	  AnalogStatePadY = 32767;
-	  SetControllerState();
-
-	  // Step through path to final position
-      for (int i = 0; i <= LoopUBound; i++) {
-    	delay(StepTime);
-    	AnalogStatePadY = AnalogStatePadY - StepSize;
-    	SetControllerState();
-      }
-	  
-	  // Ensure exact final position is reached
       AnalogStatePadX = 0;
       AnalogStatePadY = -32767;
       SetControllerState();
-	  break;
-	case LEFT:
-	  // Set initial position
-      ButtonStatePadTouch = true;
-	  AnalogStatePadX = 32767;
-	  AnalogStatePadY = 0;
-	  SetControllerState();
 
-	  // Step through path to final position
+      // Step through path to final position
       for (int i = 0; i <= LoopUBound; i++) {
-    	delay(StepTime);
-    	AnalogStatePadX = AnalogStatePadX - StepSize;
-    	SetControllerState();
+        delay(StepTime);
+        AnalogStatePadY = AnalogStatePadY + StepSize;
+        SetControllerState();
       }
-	  
-	  // Ensure exact final position is reached
-      AnalogStatePadX = -32767;
-      AnalogStatePadY = 0;
+      
+      // Ensure exact final position is reached
+      AnalogStatePadX = 0;
+      AnalogStatePadY = 32767;
       SetControllerState();
-	  break;
-	case RIGHT:
-	  // Set initial position
+      break;
+    case DOWN:
+      // Set initial position
       ButtonStatePadTouch = true;
-	  AnalogStatePadX = -32767;
-	  AnalogStatePadY = 0;
-	  SetControllerState();
+      AnalogStatePadX = 0;
+      AnalogStatePadY = 32767;
+      SetControllerState();
 
-	  // Step through path to final position
+      // Step through path to final position
       for (int i = 0; i <= LoopUBound; i++) {
-    	delay(StepTime);
-    	AnalogStatePadX = AnalogStatePadX + StepSize;
-    	SetControllerState();
+        delay(StepTime);
+        AnalogStatePadY = AnalogStatePadY - StepSize;
+        SetControllerState();
       }
-	  
-	  // Ensure exact final position is reached
+    
+      // Ensure exact final position is reached
+      AnalogStatePadX = 0;
+      AnalogStatePadY = -32767;
+      SetControllerState();
+      break;
+    case LEFT:
+      // Set initial position
+      ButtonStatePadTouch = true;
       AnalogStatePadX = 32767;
       AnalogStatePadY = 0;
       SetControllerState();
-	  break;
-	default:
-	  // TODO
-	  break;
+
+      // Step through path to final position
+      for (int i = 0; i <= LoopUBound; i++) {
+        delay(StepTime);
+        AnalogStatePadX = AnalogStatePadX - StepSize;
+        SetControllerState();
+      }
+    
+      // Ensure exact final position is reached
+      AnalogStatePadX = -32767;
+      AnalogStatePadY = 0;
+      SetControllerState();
+      break;
+    case RIGHT:
+      // Set initial position
+      ButtonStatePadTouch = true;
+      AnalogStatePadX = -32767;
+      AnalogStatePadY = 0;
+      SetControllerState();
+
+      // Step through path to final position
+      for (int i = 0; i <= LoopUBound; i++) {
+        delay(StepTime);
+        AnalogStatePadX = AnalogStatePadX + StepSize;
+        SetControllerState();
+      }
+    
+      // Ensure exact final position is reached
+      AnalogStatePadX = 32767;
+      AnalogStatePadY = 0;
+      SetControllerState();
+      break;
+    default:
+      // TODO
+      break;
   }
 }
 
@@ -228,12 +227,12 @@ void ViveTrackerController::TriggerPull(uint16_t TotalTime, uint16_t StepTime) {
 
   // Step through path to final position
   for (int i = 0; i <= LoopUBound; i++) {
-	delay(StepTime);
-	AnalogStateTrigger = AnalogStateTrigger + StepSize;
+    delay(StepTime);
+    AnalogStateTrigger = AnalogStateTrigger + StepSize;
     if (i >= LoopUBound) {
-	  ButtonStateTrigger = true;
-	}
-	SetControllerState();
+      ButtonStateTrigger = true;
+    }
+    SetControllerState();
   }
   
   // Ensure exact final position is reached
@@ -262,12 +261,12 @@ void ViveTrackerController::TriggerRelease(uint16_t TotalTime, uint16_t StepTime
 
   // Step through path to final position
   for (int i = 0; i <= LoopUBound; i++) {
-	delay(StepTime);
-	AnalogStateTrigger = AnalogStateTrigger - StepSize;
+    delay(StepTime);
+    AnalogStateTrigger = AnalogStateTrigger - StepSize;
     if (i >= 1) {
-	  ButtonStateTrigger = false;
-	}
-	SetControllerState();
+      ButtonStateTrigger = false;
+    }
+    SetControllerState();
   }
 
   // Ensure exact final position is reached
@@ -309,7 +308,7 @@ void ViveTrackerController::CalculateStepSize(uint16_t &TotalTime, uint16_t &Ste
   LoopSize = (TotalTime/StepTime);
   if (LoopSize <= 1) {
     LoopUBound = 1;
-	StepSize = LoopSpan;
+    StepSize = LoopSpan;
   }
   else {
     LoopUBound = LoopSize - 1;

@@ -63,35 +63,35 @@ private:
   static const uint32_t Index = 2;
   static const uint32_t LengthMode = 6;
   static const uint32_t LengthState = 12;
-  uint8_t  PacketDataMode[6] = {
+  uint8_t PacketDataMode[6] = {
     0xB3, // Address B3 is for setting the device mode
-	0x03, // Device Mode (1=PC, 2=Phone, 3=Accessory)
-	0x03, // Length of remaining registers
-	0x00, // Reserved (Charge Enable)
-	0x00, // Reserved (OS Type)
-	0x00  // Reserved (LPF 0=184Hz, 1=5Hz, 2=10Hz, 3=20Hz)
+    0x03, // Device Mode (1=PC, 2=Phone, 3=Accessory)
+    0x03, // Length of remaining registers
+    0x00, // Reserved (Charge Enable)
+    0x00, // Reserved (OS Type)
+    0x00  // Reserved (LPF 0=184Hz, 1=5Hz, 2=10Hz, 3=20Hz)
   };
   uint8_t PacketDataState[12] = {
     0xB4, // Address B4 is for setting the device state
-	0x0A, // Length of remaining registers
-	0x00, // Data format version for device state
-	0x00, // Button state 
+    0x0A, // Length of remaining registers
+    0x00, // Data format version for device state
+    0x00, // Button state 
           // Bit 0: TRIGGER
-		  // Bit 1: BUMPER (GRIP)
-		  // Bit 2: MENU
-		  // Bit 3: STEAM (SYSTEM)
-		  // Bit 4: PAD (TOUCHPAD CLICK)
-		  // Bit 5: PAD_FINGERDOWN (TOUCHPAD TOUCH)
-		  // Bit 6: RESERVED
-		  // Bit 7: RESERVED
-	0x00, // Pad X LSB
-	0x00, // Pad X MSB
-	0x00, // Pad Y LSB
-	0x00, // Pad Y MSB
-	0x00, // Trigger LSB
-	0x00, // Trigger MSB
-	0x00, // Reserved (Battery Level LSB)
-	0x00  // Reserved (Battery Level MSB)
+          // Bit 1: BUMPER (GRIP)
+          // Bit 2: MENU
+          // Bit 3: STEAM (SYSTEM)
+          // Bit 4: PAD (TOUCHPAD CLICK)
+          // Bit 5: PAD_FINGERDOWN (TOUCHPAD TOUCH)
+          // Bit 6: RESERVED
+          // Bit 7: RESERVED
+    0x00, // Pad X LSB
+    0x00, // Pad X MSB
+    0x00, // Pad Y LSB
+    0x00, // Pad Y MSB
+    0x00, // Trigger LSB
+    0x00, // Trigger MSB
+    0x00, // Reserved (Battery Level LSB)
+    0x00  // Reserved (Battery Level MSB)
   };
 };
 
