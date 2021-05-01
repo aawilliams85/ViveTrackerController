@@ -21,8 +21,8 @@ public:
 
   // Raw Actions
   void GetControllerInfo();
-  bool SetControllerMode();
-  bool SetControllerState();
+  void SetControllerMode();
+  void SetControllerState();
   void UpdateState();
 
   // Basic Coordinated Actions
@@ -32,7 +32,7 @@ public:
   void TriggerPull(uint16_t TotalTime = 250, uint16_t StepTime = 25);
   void TriggerRelease(uint16_t TotalTime = 250, uint16_t StepTime = 25);
 
-  // Memory   
+  // Controller State
   bool ButtonStateTrigger = false;
   bool ButtonStateGrip = false;
   bool ButtonStateMenu = false;
@@ -50,7 +50,13 @@ private:
   void CalculateStepSize(uint16_t &TotalTime, uint16_t &StepTime, uint16_t &StepSize, uint16_t &LoopSize, uint16_t &LoopUBound, uint16_t LoopSpan);
   unsigned long LastUpdateTime = 0;
 
-  // 
+  // USB Identification
+  uint16_t ActualVID = 0x0000;
+  uint16_t ActualPID = 0x0000;
+  static const uint16_t ExpectedVID = 0x28DE;
+  static const uint16_t ExpectedPID = 0x2300;
+
+  // Control Transfer Definitions
   static const uint32_t RequestType = 0x21;
   static const uint32_t Request = 0x09;
   static const uint32_t Value = 0x0300;
@@ -63,7 +69,7 @@ private:
 	0x03, // Length of remaining registers
 	0x00, // Reserved (Charge Enable)
 	0x00, // Reserved (OS Type)
-	0x00  // Reserved (LPF? 0=184Hz, 1=5Hz, 2=10Hz, 3=20Hz)
+	0x00  // Reserved (LPF 0=184Hz, 1=5Hz, 2=10Hz, 3=20Hz)
   };
   uint8_t PacketDataState[12] = {
     0xB4, // Address B4 is for setting the device state

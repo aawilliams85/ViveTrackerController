@@ -10,6 +10,8 @@
 #include "ViveTrackerController.h"
 
 void ViveTrackerController::Init() {
+  ActualPID = 0x0000;
+  ActualVID = 0x0000;
   Connected = false;
   HIDParserActive = false;
 }
@@ -17,50 +19,72 @@ void ViveTrackerController::Init() {
 void ViveTrackerController::Task() {
   if (hidparser != HIDParserActive) {
     if (HIDParserActive) {
-	  Serial.println("Disconnected");
+	  Serial.println("USB Disconnected");
+      ActualPID = 0x0000;
+      ActualVID = 0x0000;
       Connected = false;
       HIDParserActive = false;
 	}
 	else {
-		Serial.println("Connected: ");
-		Serial.println(hidparser.idVendor());
-		Serial.println(hidparser.idProduct());
-
+		// Get controller information and wait for device
+		// to be ready.  I don't know why this delay is
+		// required yet -- is there something in the HIDParser
+		// that can tell what's going on?  Or is this on the
+		// SteamVR side?  If the delay in this block is omitted
+		// the device doesn't respond to the mode change command.
+		Serial.println("USB Connected:");
 		HIDParserActive = true;
 		GetControllerInfo();
-		delay(2000);
-		Serial.println("Send mode command");
+		Serial.println(ActualVID, HEX);
+		Serial.println(ActualPID, HEX);
+        if ((ActualVID == ExpectedVID) and (ActualPID == ExpectedPID)) {
+		  Serial.println("Device matched expected VID and PID");
+		  delay(2000);
+	    }
+		else {
+		  Serial.println("Device didn't match expected VID and PID.  Halting");
+		  return;
+		}
+
+        // Change controller to accessory mode so that it can be
+		// commanded via additional control transfers.  I don't know
+		// why this delay is required yet -- whether that's how long
+		// the control transfer takes to execute, or what.  If the delay
+		// in this block is omitted the device will miss any subsequent
+		// commands until the mode change is complete.
+		Serial.println("Changing device to accessory mode");
 		SetControllerMode();
 		delay(5000);
 		Connected = true;
-		Serial.println("Fin");
+		Serial.println("Device ready for use");
 	}
   }
 
- /* uint32_t devices;
-  uint32_t pipes;
-  uint32_t transfers;
-  uint32_t strs;
-  host.countFree(devices, pipes, transfers, strs);
-  if (transfers == 4) {
-	  Connected = true;
-  }
-  else
-  {
-	  Connected = false;
-  }*/
 }
 
 void ViveTrackerController::GetControllerInfo() {
+  // Capture the USB device information
+  ActualVID = hidparser.idVendor();
+  ActualPID = hidparser.idProduct();
 }
 
-bool ViveTrackerController::SetControllerMode() {
-  return hidparser.sendControlPacket(RequestType, Request, Value, Index, LengthMode, PacketDataMode);
+void ViveTrackerController::SetControllerMode() {
+  // This command follows the Vive Tracker developer guidelines to
+  // change the device into accessory mode.
+  //
+  // Supposedly -- I should chekc that VID/PID is 28DE/2300 before executing
+  // this, and that the interface name should change to "Controller" if
+  // successful.  I don't know how to check the latter yet.
+  hidparser.sendControlPacket(RequestType, Request, Value, Index, LengthMode, PacketDataMode);
+  return;
 }
 
-bool ViveTrackerController::SetControllerState() {
+void ViveTrackerController::SetControllerState() {
+  // This command follows the Vive Tracker developer guidelines to
+  // change the device input state (buttons, trackpad, trigger).
   UpdateState();
-  return hidparser.sendControlPacket(RequestType, Request, Value, Index, LengthState, PacketDataState);
+  hidparser.sendControlPacket(RequestType, Request, Value, Index, LengthState, PacketDataState);
+  return;
 }
 
 void ViveTrackerController::UpdateState() {
@@ -80,6 +104,12 @@ void ViveTrackerController::UpdateState() {
 }
 
 void ViveTrackerController::TouchpadSwipe(TouchpadSwipeDirection Direction, uint16_t TotalTime, uint16_t StepTime) {
+  // This function emulates a trackpad swipe by "touching"
+  // the touchpad and then stepping the X and Y position
+  // through multiple positions.  The time parameters are
+  // adjustable but the default 250ms swipe time (25ms per step)
+  // works well for the scenarios I've tested so far.
+
   // Validate input limits and calculate step size
   uint16_t StepSize = 0;
   uint16_t LoopSize = 0;
@@ -179,6 +209,12 @@ void ViveTrackerController::TouchpadRelease() {
 }
 
 void ViveTrackerController::TriggerPull(uint16_t TotalTime, uint16_t StepTime) {
+  // This function emulates a trigger pull by stepping it
+  // through multiple positions and setting the button input
+  // at the end of travel.  The time parameters are adjustable
+  // but the default 250ms swipe time (25ms per step)
+  // works well for the scenarios I've tested so far.
+
   // Validate input limits and calculate step size
   uint16_t StepSize = 0;
   uint16_t LoopSize = 0;
@@ -206,7 +242,13 @@ void ViveTrackerController::TriggerPull(uint16_t TotalTime, uint16_t StepTime) {
   SetControllerState();
 }
 
-void ViveTrackerController::TriggerRelease(uint16_t TotalTime, uint16_t StepTime) {  
+void ViveTrackerController::TriggerRelease(uint16_t TotalTime, uint16_t StepTime) {
+  // This function emulates a trigger release by stepping it
+  // through multiple positions and clearing the button input
+  // after travel begins.  The time parameters are adjustable
+  // but the default 250ms swipe time (25ms per step)
+  // works well for the scenarios I've tested so far.
+
   // Validate input limits and calculate step size
   uint16_t StepSize = 0;
   uint16_t LoopSize = 0;
@@ -235,6 +277,17 @@ void ViveTrackerController::TriggerRelease(uint16_t TotalTime, uint16_t StepTime
 }
 
 void ViveTrackerController::CalculateStepSize(uint16_t &TotalTime, uint16_t &StepTime, uint16_t &StepSize, uint16_t &LoopSize, uint16_t &LoopUBound, uint16_t LoopSpan) {
+  // This function does some housecleaning to make sure
+  // that some reasonable limits are followed for input
+  // ranges, and returns altered inputs if required as
+  // well as the calculated outputs.  According to the
+  // Vive Tracker developer guidelines 10ms is the lower
+  // limit for command intervals; I arbitrarily chose 25ms
+  // based on it being reasonably fast and the math being simple
+  // for 250ms events.  Technically there is no upper limit
+  // but I arbitrarily chose 5000ms, which is pretty slow for
+  // either action currently using this.
+  
   // Impose a standard set of limits.  All units are in milliseconds.
   if (TotalTime < 25) {
     TotalTime = 25;
