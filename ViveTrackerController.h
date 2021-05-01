@@ -1,10 +1,12 @@
-#ifndef __ViveTrackerController_h_
-#define __ViveTrackerController_h_
-
+// Library files for Vive Tracker USB control via the Teensy USBHost_t36 library
+//
 // Based on the following sources:
 // Peter S Hollander - Vive Tracker HID reports http://www.talariavr.com/blog/vive-tracker-initial-documentation/
 // Matzman666 - Arduino Due USB Host example https://github.com/matzman666/USBHost
 // SkyprtX - Teensy USB Host example https://forum.pjrc.com/threads/58460-USBHost_t36-Buffer-parameter-handling
+
+#ifndef __ViveTrackerController_h_
+#define __ViveTrackerController_h_
 
 #include <Arduino.h>
 #include <USBHost_t36.h>

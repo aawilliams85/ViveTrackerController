@@ -1,3 +1,5 @@
+// Library files for Vive Tracker USB control via the Teensy USBHost_t36 library
+//
 // Based on the following sources:
 // Peter S Hollander - Vive Tracker HID reports http://www.talariavr.com/blog/vive-tracker-initial-documentation/
 // Matzman666 - Arduino Due USB Host example https://github.com/matzman666/USBHost
