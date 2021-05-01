@@ -9,24 +9,6 @@
 #include <USBHost_t36.h>
 #include "ViveTrackerController.h"
 
-/*static void println(const char *title, uint32_t val, uint8_t b = DEC) {
-	Serial.print(title);
-	Serial.println(val, b);	
-}
-
-static void println(const char *title) {
-	Serial.println(title);
-}
-
-static void println(uint8_t b = DEC) {
-	Serial.println(b);
-}
-
-static void print(const char *title, uint32_t val, uint8_t b = DEC) {
-	Serial.print(title);
-	Serial.print(val, b);	
-}*/
-
 void ViveTrackerController::Init() {
   Connected = false;
   ControllerModeAck = false;
@@ -49,16 +31,14 @@ void ViveTrackerController::Task(USBHost &host) {
 }
 
 void ViveTrackerController::GetControllerInfo(USBHIDParser &hidparser) {
-  //println("*** HID Device %x:%x connected ***\n", hidparser.idVendor(), hidparser.idProduct());
 }
 
 bool ViveTrackerController::SetControllerMode(USBHIDParser &hidparser) {
-  //println("Setting controller mode to accessory");
   return hidparser.sendControlPacket(RequestType, Request, Value, Index, LengthMode, PacketDataMode);
 }
 
 bool ViveTrackerController::SetControllerState(USBHIDParser &hidparser) {
-  //println("Setting controller state");  
+  UpdateState();
   return hidparser.sendControlPacket(RequestType, Request, Value, Index, LengthState, PacketDataState);
 }
 
@@ -90,14 +70,12 @@ void ViveTrackerController::TouchpadSwipe(USBHIDParser &hidparser, TouchpadSwipe
       ButtonStatePadTouch = true;
 	  AnalogStatePadX = 0;
 	  AnalogStatePadY = 32767;
-	  UpdateState();
 	  SetControllerState(hidparser);
 
 	  // Step through path to final position
       for (int i = 0; i <= 9; i++) {
 		delay(25);
         AnalogStatePadY = AnalogStatePadY - 6553;
-		UpdateState();
 		SetControllerState(hidparser);
 	  }
 	  break;
@@ -112,7 +90,6 @@ void ViveTrackerController::TouchpadRelease(USBHIDParser &hidparser) {
   ButtonStatePadTouch = false;
   AnalogStatePadX = 0;
   AnalogStatePadY = 0;
-  UpdateState();
   SetControllerState(hidparser);
 }
 
@@ -122,7 +99,6 @@ void ViveTrackerController::TriggerPull(USBHIDParser &hidparser) {
   //Set initial position
   ButtonStateTrigger = false;
   AnalogStateTrigger = 0;
-  UpdateState();
   SetControllerState(hidparser);
 
   // Step through path to final position
@@ -132,7 +108,6 @@ void ViveTrackerController::TriggerPull(USBHIDParser &hidparser) {
     if (i >= 9) {
 	  ButtonStateTrigger = true;
 	}
-	UpdateState();
 	SetControllerState(hidparser);
   }  
 }
@@ -140,6 +115,5 @@ void ViveTrackerController::TriggerPull(USBHIDParser &hidparser) {
 void ViveTrackerController::TriggerRelease(USBHIDParser &hidparser) {
   ButtonStateTrigger = false;
   AnalogStateTrigger = 0;
-  UpdateState();
   SetControllerState(hidparser);
 }

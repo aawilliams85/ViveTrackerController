@@ -13,42 +13,47 @@
 
 class ViveTrackerController {
 public:
-  bool Connected;
-  bool ControllerModeAck;
-  bool ControllerModeSent;
-  unsigned long LastUpdateTime;
+  // Object State
+  bool Connected = false;
+  bool ControllerModeAck = false;
+  bool ControllerModeSent = false;
+  unsigned long LastUpdateTime = 0;
   void Task(USBHost &host);
 
+  // Raw Actions
   void GetControllerInfo(USBHIDParser &hidparser);
   bool SetControllerMode(USBHIDParser &hidparser);
   bool SetControllerState(USBHIDParser &hidparser);
   void UpdateState();
 
+  // Basic Coordinated Actions
   enum TouchpadSwipeDirection {N, S, E, W, NE, SE, SW, NW};
   void TouchpadSwipe(USBHIDParser &hidparser, TouchpadSwipeDirection dir);
   void TouchpadRelease(USBHIDParser &hidparser);
-  
   void TriggerPull(USBHIDParser &hidparser);
   void TriggerRelease(USBHIDParser &hidparser);
-  
-  bool ButtonStateTrigger;
-  bool ButtonStateGrip;
-  bool ButtonStateMenu;
-  bool ButtonStateSystem;
-  bool ButtonStatePadClick;
-  bool ButtonStatePadTouch;
-  int16_t AnalogStatePadX;
-  int16_t AnalogStatePadY;
-  uint16_t AnalogStateTrigger;
+
+  // Memory   
+  bool ButtonStateTrigger = false;
+  bool ButtonStateGrip = false;
+  bool ButtonStateMenu = false;
+  bool ButtonStateSystem = false;
+  bool ButtonStatePadClick = false;
+  bool ButtonStatePadTouch = false;
+  int16_t AnalogStatePadX = 0;
+  int16_t AnalogStatePadY = 0;
+  uint16_t AnalogStateTrigger = 0;
+
 private:
   void Init();
-  
-  const static uint32_t RequestType = 0x21;
-  const static uint32_t Request = 0x09;
-  const static uint32_t Value = 0x0300;
-  const static uint32_t Index = 2;
-  const static uint32_t LengthMode = 6;
-  const static uint32_t LengthState = 12;
+
+  // 
+  static const uint32_t RequestType = 0x21;
+  static const uint32_t Request = 0x09;
+  static const uint32_t Value = 0x0300;
+  static const uint32_t Index = 2;
+  static const uint32_t LengthMode = 6;
+  static const uint32_t LengthState = 12;
   uint8_t  PacketDataMode[6] = {
     0xB3, // Address B3 is for setting the device mode
 	0x03, // Device Mode (1=PC, 2=Phone, 3=Accessory)
