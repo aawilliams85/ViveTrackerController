@@ -12,13 +12,22 @@
 class ViveTrackerController {
 public:
   bool Connected;
+  bool ControllerModeAck;
+  bool ControllerModeSent;
+  unsigned long LastUpdateTime;
   void Task(USBHost &host);
 
   void GetControllerInfo(USBHIDParser &hidparser);
   bool SetControllerMode(USBHIDParser &hidparser);
   bool SetControllerState(USBHIDParser &hidparser);
   void UpdateState();
-  unsigned long LastUpdateTime;
+
+  enum TouchpadSwipeDirection {N, S, E, W, NE, SE, SW, NW};
+  void TouchpadSwipe(USBHIDParser &hidparser, TouchpadSwipeDirection dir);
+  void TouchpadRelease(USBHIDParser &hidparser);
+  
+  void TriggerPull(USBHIDParser &hidparser);
+  void TriggerRelease(USBHIDParser &hidparser);
   
   bool ButtonStateTrigger;
   bool ButtonStateGrip;
@@ -28,16 +37,16 @@ public:
   bool ButtonStatePadTouch;
   int16_t AnalogStatePadX;
   int16_t AnalogStatePadY;
-  int16_t AnalogStateTrigger;
+  uint16_t AnalogStateTrigger;
 private:
   void Init();
   
-  uint32_t RequestType = 0x21;
-  uint32_t Request = 0x09;
-  uint32_t Value = 0x0300;
-  uint32_t Index = 2;
-  uint32_t LengthMode = 6;
-  uint32_t LengthState = 12;
+  const static uint32_t RequestType = 0x21;
+  const static uint32_t Request = 0x09;
+  const static uint32_t Value = 0x0300;
+  const static uint32_t Index = 2;
+  const static uint32_t LengthMode = 6;
+  const static uint32_t LengthState = 12;
   uint8_t  PacketDataMode[6] = {
     0xB3, // Address B3 is for setting the device mode
 	0x03, // Device Mode (1=PC, 2=Phone, 3=Accessory)
@@ -59,7 +68,7 @@ private:
 		  // Bit 5: PAD_FINGERDOWN (TOUCHPAD TOUCH)
 		  // Bit 6: RESERVED
 		  // Bit 7: RESERVED
-	0x00, // Pad X LSB 
+	0x00, // Pad X LSB
 	0x00, // Pad X MSB
 	0x00, // Pad Y LSB
 	0x00, // Pad Y MSB
