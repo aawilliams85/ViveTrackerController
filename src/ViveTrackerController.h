@@ -26,11 +26,11 @@ public:
   void UpdateState();
 
   // Basic Coordinated Actions
-  enum TouchpadSwipeDirection {N, S, E, W, NE, SE, SW, NW};
-  void TouchpadSwipe(TouchpadSwipeDirection dir);
+  enum TouchpadSwipeDirection {UP, DOWN, LEFT, RIGHT};
+  void TouchpadSwipe(TouchpadSwipeDirection Direction, uint16_t TotalTime = 250, uint16_t StepTime = 25);
   void TouchpadRelease();
-  void TriggerPull(uint16_t totaltime = 250, uint16_t steptime = 25);
-  void TriggerRelease(uint16_t totaltime = 250, uint16_t steptime = 25);
+  void TriggerPull(uint16_t TotalTime = 250, uint16_t StepTime = 25);
+  void TriggerRelease(uint16_t TotalTime = 250, uint16_t StepTime = 25);
 
   // Memory   
   bool ButtonStateTrigger = false;
@@ -47,6 +47,7 @@ private:
   USBHIDParser &hidparser;
   bool HIDParserActive = false;
   void Init();
+  void CalculateStepSize(uint16_t &TotalTime, uint16_t &StepTime, uint16_t &StepSize, uint16_t &LoopSize, uint16_t &LoopUBound, uint16_t LoopSpan);
   unsigned long LastUpdateTime = 0;
 
   // 

@@ -79,14 +79,34 @@ void ViveTrackerController::UpdateState() {
   LastUpdateTime = millis();
 }
 
-void ViveTrackerController::TouchpadSwipe(TouchpadSwipeDirection dir) {
-  // TODO -- Add all standard directions, parameterize step size and delay, add option for randomness?
+void ViveTrackerController::TouchpadSwipe(TouchpadSwipeDirection Direction, uint16_t TotalTime, uint16_t StepTime) {
+  // Validate input limits and calculate step size
+  uint16_t StepSize = 0;
+  uint16_t LoopSize = 0;
+  uint16_t LoopUBound = 0;
+  CalculateStepSize(TotalTime, StepTime, StepSize, LoopSize, LoopUBound, 65535);
 
-  switch (dir) {
-    case N:
-	  // TODO
+  switch (Direction) {
+    case UP:
+	  // Set initial position
+      ButtonStatePadTouch = true;
+	  AnalogStatePadX = 0;
+	  AnalogStatePadY = -32767;
+	  SetControllerState();
+
+	  // Step through path to final position
+      for (int i = 0; i <= LoopUBound; i++) {
+    	delay(StepTime);
+    	AnalogStatePadY = AnalogStatePadY + StepSize;
+    	SetControllerState();
+      }
+	  
+	  // Ensure exact final position is reached
+      AnalogStatePadX = 0;
+      AnalogStatePadY = 32767;
+      SetControllerState();
 	  break;
-    case S:
+    case DOWN:
 	  // Set initial position
       ButtonStatePadTouch = true;
 	  AnalogStatePadX = 0;
@@ -94,11 +114,54 @@ void ViveTrackerController::TouchpadSwipe(TouchpadSwipeDirection dir) {
 	  SetControllerState();
 
 	  // Step through path to final position
-      for (int i = 0; i <= 9; i++) {
-		delay(25);
-        AnalogStatePadY = AnalogStatePadY - 6553;
-		SetControllerState();
-	  }
+      for (int i = 0; i <= LoopUBound; i++) {
+    	delay(StepTime);
+    	AnalogStatePadY = AnalogStatePadY - StepSize;
+    	SetControllerState();
+      }
+	  
+	  // Ensure exact final position is reached
+      AnalogStatePadX = 0;
+      AnalogStatePadY = -32767;
+      SetControllerState();
+	  break;
+	case LEFT:
+	  // Set initial position
+      ButtonStatePadTouch = true;
+	  AnalogStatePadX = 32767;
+	  AnalogStatePadY = 0;
+	  SetControllerState();
+
+	  // Step through path to final position
+      for (int i = 0; i <= LoopUBound; i++) {
+    	delay(StepTime);
+    	AnalogStatePadX = AnalogStatePadX - StepSize;
+    	SetControllerState();
+      }
+	  
+	  // Ensure exact final position is reached
+      AnalogStatePadX = -32767;
+      AnalogStatePadY = 0;
+      SetControllerState();
+	  break;
+	case RIGHT:
+	  // Set initial position
+      ButtonStatePadTouch = true;
+	  AnalogStatePadX = -32767;
+	  AnalogStatePadY = 0;
+	  SetControllerState();
+
+	  // Step through path to final position
+      for (int i = 0; i <= LoopUBound; i++) {
+    	delay(StepTime);
+    	AnalogStatePadX = AnalogStatePadX + StepSize;
+    	SetControllerState();
+      }
+	  
+	  // Ensure exact final position is reached
+      AnalogStatePadX = 32767;
+      AnalogStatePadY = 0;
+      SetControllerState();
 	  break;
 	default:
 	  // TODO
@@ -107,6 +170,7 @@ void ViveTrackerController::TouchpadSwipe(TouchpadSwipeDirection dir) {
 }
 
 void ViveTrackerController::TouchpadRelease() {
+  // Resets button and analog signals for touchpad
   ButtonStatePadClick = false;
   ButtonStatePadTouch = false;
   AnalogStatePadX = 0;
@@ -114,58 +178,89 @@ void ViveTrackerController::TouchpadRelease() {
   SetControllerState();
 }
 
-void ViveTrackerController::TriggerPull(uint16_t totaltime, uint16_t steptime) {
-  uint16_t stepsize = 0;
-  uint16_t laststep = (totaltime/steptime);
-  if (laststep <= 1) {
-    laststep = 1;
-	stepsize = 65535;
-  }
-  else {
-    stepsize = 65535 / laststep;
-    laststep -= 1;
-  }
+void ViveTrackerController::TriggerPull(uint16_t TotalTime, uint16_t StepTime) {
+  // Validate input limits and calculate step size
+  uint16_t StepSize = 0;
+  uint16_t LoopSize = 0;
+  uint16_t LoopUBound = 0;
+  CalculateStepSize(TotalTime, StepTime, StepSize, LoopSize, LoopUBound, 65535);
 
-  //Set initial position
+  // Set initial position
   ButtonStateTrigger = false;
   AnalogStateTrigger = 0;
   SetControllerState();
 
   // Step through path to final position
-  for (int i = 0; i <= laststep; i++) {
-	delay(steptime);
-	AnalogStateTrigger = AnalogStateTrigger + stepsize;
-    if (i >= laststep) {
+  for (int i = 0; i <= LoopUBound; i++) {
+	delay(StepTime);
+	AnalogStateTrigger = AnalogStateTrigger + StepSize;
+    if (i >= LoopUBound) {
 	  ButtonStateTrigger = true;
 	}
 	SetControllerState();
   }
+  
+  // Ensure exact final position is reached
+  ButtonStateTrigger = true;
+  AnalogStateTrigger = 65535;
+  SetControllerState();
 }
 
-void ViveTrackerController::TriggerRelease(uint16_t totaltime, uint16_t steptime) {  
-  uint16_t stepsize = 0;
-  uint16_t laststep = (totaltime/steptime);
-  if (laststep <= 1) {
-    laststep = 1;
-	stepsize = 65535;
-  }
-  else {
-    stepsize = 65535 / laststep;
-    laststep -= 1;
-  }
+void ViveTrackerController::TriggerRelease(uint16_t TotalTime, uint16_t StepTime) {  
+  // Validate input limits and calculate step size
+  uint16_t StepSize = 0;
+  uint16_t LoopSize = 0;
+  uint16_t LoopUBound = 0;
+  CalculateStepSize(TotalTime, StepTime, StepSize, LoopSize, LoopUBound, 65535);
 
-  //Set initial position
+  // Set initial position
   ButtonStateTrigger = true;
   AnalogStateTrigger = 65535;
   SetControllerState();
 
   // Step through path to final position
-  for (int i = 0; i <= laststep; i++) {
-	delay(steptime);
-	AnalogStateTrigger = AnalogStateTrigger - stepsize;
+  for (int i = 0; i <= LoopUBound; i++) {
+	delay(StepTime);
+	AnalogStateTrigger = AnalogStateTrigger - StepSize;
     if (i >= 1) {
 	  ButtonStateTrigger = false;
 	}
 	SetControllerState();
   }
+
+  // Ensure exact final position is reached
+  ButtonStateTrigger = false;
+  AnalogStateTrigger = 0;
+  SetControllerState();
+}
+
+void ViveTrackerController::CalculateStepSize(uint16_t &TotalTime, uint16_t &StepTime, uint16_t &StepSize, uint16_t &LoopSize, uint16_t &LoopUBound, uint16_t LoopSpan) {
+  // Impose a standard set of limits.  All units are in milliseconds.
+  if (TotalTime < 25) {
+    TotalTime = 25;
+  }
+  if (TotalTime > 5000) {
+    TotalTime = 5000;
+  }
+  if (StepTime < 25) {
+    StepTime = 25;
+  }
+  if (StepTime > 5000) {
+    StepTime = 5000;
+  }
+  if (StepTime > TotalTime) {
+    StepTime = TotalTime;
+  }
+
+  // Calculate the number of steps and size of each step
+  LoopSize = (TotalTime/StepTime);
+  if (LoopSize <= 1) {
+    LoopUBound = 1;
+	StepSize = LoopSpan;
+  }
+  else {
+    LoopUBound = LoopSize - 1;
+    StepSize = LoopSpan / LoopUBound;
+  }
+  return;
 }
